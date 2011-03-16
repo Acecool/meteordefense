@@ -1,0 +1,26 @@
+"Gamemode"
+{
+	"name"		"MeteorDefense"
+	"version"	"0.1"
+
+	"author_name"	"Fantym"
+	"author_email"	""
+	"author_url"	""
+	
+	"icon"		""
+	"info"		""
+	"hide"		"0"
+
+	"sandbox_maps"
+	{
+		"1"	"^md_"
+	}
+
+	"mappattern"
+	{
+		"1" "^md_"
+	}
+
+	"selectable"	"1"
+	"description"	"Build to survive"
+}
