@@ -3,8 +3,9 @@ include("round_code.lua")
 include("shared_data.lua")
 include("shared_code.lua")
 include("server_code.lua")
---include("daytime.lua")
 include("sunrise.lua")
+include("pdmg_exclusions.lua")
+include("pdmg.lua")
 
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared_data.lua")
@@ -12,7 +13,8 @@ AddCSLuaFile("shared_code.lua")
 AddCSLuaFile("cl_menus.lua")
 AddCSLuaFile("client_code.lua")
 AddCSLuaFile("sunrise.lua")
-
+AddCSLuaFile("pdmg.lua")
+AddCSLuaFile("pdmg_exclusions.lua")
 
 resource.AddFile( "maps/" .. game.GetMap() .. ".bsp" );
 
