@@ -204,15 +204,15 @@ end
 hook.Add("PreDrawOpaqueRenderables", "fanRenderBoxes", RenderBoxes)
 
 
-function fanSpawnMenuEnabled()
+function GM:SpawnMenuEnabled()
 	return false
 end
-hook.Add("SpawnMenuEnabled", "fanSpawnMenuEnabled", fanSpawnMenuEnabled)
+--hook.Add("SpawnMenuEnabled", "fanSpawnMenuEnabled", fanSpawnMenuEnabled)
 
-function fanSpawnMenuOpen()
+function GM:SpawnMenuOpen()
 	return false
 end
-hook.Add("SpawnMenuOpen", "fanSpawnMenuOpen", fanSpawnMenuOpen)
+--hook.Add("SpawnMenuOpen", "fanSpawnMenuOpen", fanSpawnMenuOpen)
 
 -- Quick Ref : LookInfo for player( showInfo, isPlayer, name,  credits, streak, pos)
 -- Quick Ref : LookInfo for props ( showInfo, isPlayer, owner, worth,   age,    pos)
@@ -337,10 +337,17 @@ function GM:HUDDrawTargetID()
      return false
 end
 
-function fanPlayerBindPress( ply, bind, pressed )
+function GM:PlayerBindPress( ply, bind, pressed )
       //To block more commands, you could add another line similar to the one below, just replace the command
       --if string.find( bind, "impulse 100" ) then return true end
 	  --print("Bind: \t" .. bind .. " was called and Pressed is " .. tostring(pressed))
 	  
 end
-hook.Add("PlayerBindPress", "fanPlayerBindPress", fanPlayerBindPress)
+--hook.Add("PlayerBindPress", "fanPlayerBindPress", fanPlayerBindPress)
+
+--[[hook.Add( "HUDShouldDraw", "NoReallyStayDisabled", function ( x ) 
+	--if ( x == "CHudChat" ) then return false end 
+	print(x)
+	end ) 
+	
+--]]
