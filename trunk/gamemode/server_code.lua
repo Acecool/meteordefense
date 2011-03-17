@@ -746,7 +746,7 @@ end
 hook.Add("PlayerSpawnObject", "fanPlayerSpawnObject", fanPlayerSpawnObject)
 
 
-function fanPlayerSpawn( ply )
+function GM:PlayerSpawn( ply )
 
 	-- See if they have the area boxes
 	
@@ -772,11 +772,14 @@ function fanPlayerSpawn( ply )
 	ply.SeenWelcome = true	
 	
 	UpdateCredits(ply)
+	
+	fanPlayerLoadout(ply)
+	
 end
-hook.Add("PlayerSpawn", "fanPlayerSpawn", fanPlayerSpawn)
+---hook.Add("PlayerSpawn", "fanPlayerSpawn", fanPlayerSpawn)
 
 -- Things to do when the game loads
-function fanInitPostEntity()
+function GM:InitPostEntity()
 	
 	--Initialize Tables
 	fanInitTables()
@@ -784,7 +787,7 @@ function fanInitPostEntity()
 	--starts = ents.FindByName("meteor_spawn")
 	theWorld = ents.GetAll()[1]
 end
-hook.Add("InitPostEntity", "fanInitPostEntity", fanInitPostEntity)
+--hook.Add("InitPostEntity", "fanInitPostEntity", fanInitPostEntity)
 
 -- Post Round Hook
 -- Starts Autohealing
@@ -965,8 +968,9 @@ hook.Add( "OnEntityCreated", "fanFixMass", fixMassHook )
 
 -- Player Loadout
 -- Give weapons based on what were doing at the moment.
-function fanLoadout( ply )
-
+function fanPlayerLoadout( ply )
+	
+	print("Player LoadOut")
 	ply:StripWeapons()
 	
 	if DidPreOnce() then
@@ -979,24 +983,16 @@ function fanLoadout( ply )
 		
 	end
 	
-	-- Set Max health back
-	--[[if !(ply.MaxHealth == nil) then
-		if ply.MaxHealth > 0 then
-			ply:SetMaxHealth(ply.MaxHealth)
-			ply:SetHealth(ply.MaxHealth)
-		end
-	end--]]
-
 	UpdateCredits(ply)
 	
-	return true
+	
 end
 hook.Add( "PlayerLoadout", "fanLoadout", fanLoadout)
 
 -- Player Disconnected 
 -- When a player disconnects randomly remove their props some not all
 -- Then sell any property they own and save their data
-function fanPlayerDisconnected( ply )
+function GM:PlayerDisconnected( ply )
 	
 	-- Remove Props on disconnect
 	for k, v in pairs(ents.GetAll()) do
@@ -1022,10 +1018,10 @@ function fanPlayerDisconnected( ply )
 	SavePlayerData(ply)
 	
 end
-hook.Add("PlayerDisconnected", "fanPlayerDisconnected", fanPlayerDisconnected)
+--hook.Add("PlayerDisconnected", "fanPlayerDisconnected", fanPlayerDisconnected)
 
 -- Going to add Chat logging and soem chat commands here.
-function fanPlayerSay( ply, str, teamonly)
+function GM:PlayerSay( ply, str, teamonly)
 
 	local logNameEnd = os.date("%m%d%y") .. ".txt"
 	
@@ -1049,11 +1045,11 @@ function fanPlayerSay( ply, str, teamonly)
 	
 	
 end
-hook.Add("PlayerSay", "fanPlayerSay", fanPlayerSay)
+--hook.Add("PlayerSay", "fanPlayerSay", fanPlayerSay)
 
 -- PlayerDeath Hook
 -- Handles medical expenses
-function fanPlayerDeath( ply, weapon, killer )
+function GM:PlayerDeath( ply, weapon, killer )
 		
 		if RoundTimeRemaining() > -1 then
 			ply.Died = true
@@ -1064,9 +1060,9 @@ function fanPlayerDeath( ply, weapon, killer )
 		ply.Credits = ply.Credits - 100
 		ply.timeOfDeath = CurTime()
 end
-hook.Add( "PlayerDeath", "fanPlayerDeath", fanPlayerDeath)
+--hook.Add( "PlayerDeath", "fanPlayerDeath", fanPlayerDeath)
 
-function fanPlayerDeathThink( ply )
+function GM:PlayerDeathThink( ply )
 
 	if ply.timeOfDeath == nil then ply.timeOfDeath = CurTime() end
 	
@@ -1075,17 +1071,17 @@ function fanPlayerDeathThink( ply )
 	end
 
 end
-hook.Add("PlayerDeathThink", "fanPlayerDeathThink",fanPlayerDeathThink)
+--hook.Add("PlayerDeathThink", "fanPlayerDeathThink",fanPlayerDeathThink)
 
--- No teams, every see it all.
-function SeeChat()
+-- No teams, yet, everyone sees it all.
+function GM:PlayerCanSeePlayersChat()
 	return true
 end
-hook.Add("PlayerCanSeePlayersChat", "fanSeeChat", SeeChat)
+--hook.Add("PlayerCanSeePlayersChat", "fanSeeChat", SeeChat)
 
 -- Minge Protection
 -- Can't pickup anything unless you own it.
-function fanPhysgunPickup( ply, ent)
+function GM:PhysgunPickup( ply, ent)
 	
 	if ent:IsPlayer() then return false end
 	if ent.owner == nil then return false end
@@ -1102,14 +1098,14 @@ function fanPhysgunPickup( ply, ent)
 	end
 
 end
-hook.Add( "PhysgunPickup", "fanPhysgunPickup", fanPhysgunPickup)
+--hook.Add( "PhysgunPickup", "fanPhysgunPickup", fanPhysgunPickup)
 
-function fanPhysgunDrop( ply, ent)
+function GM:PhysgunDrop( ply, ent)
 
 	ent:SetCollisionGroup(COLLISION_GROUP_NONE)
 
 end
-hook.Add( "PhysgunDrop", "fanPhysgunDrop", fanPhysgunDrop)
+--hook.Add( "PhysgunDrop", "fanPhysgunDrop", fanPhysgunDrop)
 
 function fanCanTool( ply, trace, toolmode )
 
@@ -1210,17 +1206,17 @@ function lookThink()
 end
 hook.Add( "Think", "fanLookThink", lookThink)
 
-local function serverShutdown()
+function GM:ShutDown()
     for _, ply in pairs(player.GetHumans()) do 
 		fanPlayerDisconnected( ply )
 	end
 end
-hook.Add( "ShutDown", "serverShutdown", serverShutdown )
+--hook.Add( "ShutDown", "serverShutdown", serverShutdown )
 
-function NetworkIDValidated( name, steamid )
+function GM:NetworkIDValidated( name, steamid )
 	print( name .. " has vaild steam id: " .. steamid)
 end
-hook.Add( "NetworkIDValidated", "fanNetworkIDValidated", NetworkIDValidated)
+--hook.Add( "NetworkIDValidated", "fanNetworkIDValidated", NetworkIDValidated)
 
 
 function FirstSpawn( ply )
@@ -1239,7 +1235,7 @@ function PlayerConnect( name, address )
 end
 hook.Add( "PlayerConnect", "fanPlayerConnect", PlayerConnect)
 
-function fanPlayerNoClip( ply )
+function GM:PlayerNoClip( ply )
 	if !ply:IsSuperAdmin() then
 		ply:ChatPrint("No Clip is disabled, if you need to get up try doors")
 		return false
@@ -1249,7 +1245,7 @@ function fanPlayerNoClip( ply )
 	end
 	return false  -- Should never get this far
 end
-hook.Add("PlayerNoClip", "fanPlayerNoClip", fanPlayerNoClip)
+--hook.Add("PlayerNoClip", "fanPlayerNoClip", fanPlayerNoClip)
 
 function SaveAllPlayers( pl, cmd, args) 
 

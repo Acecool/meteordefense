@@ -119,7 +119,7 @@ function dec( n )
 	return n - 1
 end
 
-function entityRemoved(ent)
+function GM:EntityRemoved(ent)
    --print("Removed Entity: " .. tostring(ent) .. " @ " .. tostring(os.time()))
 end
-hook.Add("EntityRemoved", "entRemoved", entityRemoved)
+--hook.Add("EntityRemoved", "entRemoved", entityRemoved)

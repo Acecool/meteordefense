@@ -17,13 +17,13 @@ function checkAllKeys()
 	end
 end
 
-local function StartChat(TeamSay)
+function GM:StartChat(TeamSay)
 	--return true -- Return true to hide the chatbox
 	allowMenu = false
 end
-hook.Add("StartChat", "fanStartChatBox", StartChat)
+--hook.Add("StartChat", "fanStartChatBox", StartChat)
 
-local function FinishChat(TeamSay)
+function GM:FinishChat(TeamSay)
 	--return true -- Return true to hide the chatbox
 	allowMenu = true
 end

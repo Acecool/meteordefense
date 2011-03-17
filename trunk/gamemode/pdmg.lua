@@ -264,7 +264,7 @@ if (SERVER) then
 		if v:GetModel() == nil then return end
 		
 		--Class and Model Exclusion Code
-		PrintTable(pdmgExclusions)
+		--PrintTable(pdmgExclusions)
 		if table.HasValue(pdmgExclusions, tostring(v:GetClass())) then return end
 		if table.HasValue(pdmgExclusions, tostring(v:GetModel())) then return end
 		

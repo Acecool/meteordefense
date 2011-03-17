@@ -137,8 +137,8 @@ function GetPostRoundInterval() return iPostRoundInterval end
 
 
 -- Quick Hooks they keep track of the players playing
-hook.Add( "PlayerAuthed", "fanPlayerAuthed", function ( ply, stmID, unqID ) table.insert( iPlayers, ply ) end )
-hook.Add( "PlayerDisconnected", "fanPlayerDisconnected", function ( ply )  table.remove(iPlayers, IndexFromValue(ply)) end )
+hook.Add( "PlayerInitialSpawn", "fanPlayerInitialSpawn", function ( ply ) table.insert( iPlayers, ply ) end )
+hook.Add( "PlayerDisconnected", "fanPlayerDisconnected", function ( ply ) table.remove(iPlayers, IndexFromValue(ply)) end )
 
 -- Internal Functions
 
