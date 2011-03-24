@@ -11,8 +11,8 @@ SWEP.ViewModel = "models/Weapons/V_Stunbaton.mdl";
 SWEP.WorldModel = "models/Weapons/w_stunbaton.mdl";
  
 SWEP.Primary.ClipSize = 20;
-SWEP.Primary.DefaultClip = 200;
-SWEP.Primary.Automatic = false;
+SWEP.Primary.DefaultClip = 240;
+SWEP.Primary.Automatic = true;
 SWEP.Primary.Ammo = "Battery";
  
 SWEP.Secondary.ClipSize = -1;

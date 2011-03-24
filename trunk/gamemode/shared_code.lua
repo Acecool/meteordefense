@@ -7,8 +7,14 @@ function IsClass( ent, class )
 	if ent == NULL then return false end
 	if !ent:IsValid() then return false end
 	
-	if (string.find(ent:GetClass(), class) == nil) then return false else return true end
-
+	local result = string.find(ent:GetClass(), class)
+	--print("Is " .. ent:GetClass() .. " a " .. class .. " : " .. tostring(!(result == nil)))
+	if (result == nil) then 
+		return false 
+	else 
+		return true 
+	end
+	
 end				
 
 

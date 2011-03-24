@@ -27,20 +27,10 @@ function GM:FinishChat(TeamSay)
 	--return true -- Return true to hide the chatbox
 	allowMenu = true
 end
-hook.Add("FinishChat", "fanFinishChat", FinishChat)
+--hook.Add("FinishChat", "fanFinishChat", FinishChat)
 
 function fanKeyPressed()
 	
-	--checkAllKeys()
-	--[[if (input.IsKeyDown(KEY_BACKQUOTE) or 
-	   input.IsKeyDown(KEY_U)or
-	   input.IsKeyDown(KEY_Y)) and
-	   CurTime() - allowTime > 0.3 then
-		allowMenu = !allowMenu
-		allowTime = CurTime()
-		
-	end--]]
-		
 	if allowMenu and (CurTime() > keyNextThink) then
 		if input.IsKeyDown(KEY_C) and
 			!showCMenu and 
@@ -70,6 +60,7 @@ function fanKeyPressed()
 					cInside:SetText(curMode)
 					cInside:PerformLayout()				
 					cInside:SetVisible(true)
+					RestoreCursorPosition( )			
 					if cInside.once == nil then
 						cInside.once = true
 						cInside:MakePopup()
@@ -81,6 +72,7 @@ function fanKeyPressed()
 			!input.IsKeyDown(KEY_C) then
 			--print("Context Menu Closed")
 			--print(cInside)
+			RememberCursorPosition()
 			cInside:SetVisible(false)
 			--cInside:Close()
 			showCMenu = false
@@ -90,8 +82,32 @@ function fanKeyPressed()
 		   input.IsKeyDown(KEY_Q) and
 			!showQMenu and
 			!inRound then 
-				--print("Spawn Menu Open")
+						
+				if MeteorMenu == "bah" then createSpawnMenu() end
+				MeteorMenu:SetVisible(true)
 				RestoreCursorPosition( )			
+				if MeteorMenu.once == nil then
+					MeteorMenu.once = true
+					MeteorMenu:MakePopup()
+				end
+				showQMenu = true
+
+			
+		elseif showQMenu and
+			!input.IsKeyDown(KEY_Q) then
+			--print("Spawn Menu Closed")
+			RememberCursorPosition()
+			MeteorMenu:SetVisible(false)
+			MeteorMenu:Close()
+			showQMenu = false
+		end
+	keyNextThink = CurTime() + 0.25
+	end
+end
+hook.Add( "Think", "fanKeyPressed", fanKeyPressed )
+
+function createSpawnMenu()
+	
 				local claimPropButton
 				local sellPropertyButton
 				local buyPropertyButton
@@ -114,10 +130,7 @@ function fanKeyPressed()
 		
 				--Panel's	
 				propPanel = vgui.Create('DPanel')
-				--propPanel:SetParent(MeteorMenu)
 				propPanel:SetSize(208, 335)
-				--propPanel:SetPos(10, 55)
-				--propPanel:SetPos(0, 0)
 				
 				entityPanel = vgui.Create('DPanel')
 				entityPanel:SetSize(208,335)
@@ -131,19 +144,12 @@ function fanKeyPressed()
 				actionPanel:SetParent(MeteorMenu)
 				actionPanel:SetSize(140, 335)
 				actionPanel:SetPos(363, 55)
-				
-				--Labels
-				--[[propLabel = vgui.Create('DLabel')
-				propLabel:SetParent(MeteorMenu)
-				propLabel:SetPos(10, 38)
-				propLabel:SetText('Props')
-				propLabel:SizeToContents()	
-				--]]
-				
+
 				iconSheet = vgui.Create('DPropertySheet', MeteorMenu)
 				iconSheet:SetPos(10,34)
 				iconSheet:SetSize(210,356)
 				
+				--Labels
 				toolLabel = vgui.Create('DLabel')
 				toolLabel:SetParent(MeteorMenu)
 				toolLabel:SetPos(223, 38)
@@ -193,10 +199,16 @@ function fanKeyPressed()
 					spawnIcon:SetModel(v[2])
 					spawnIcon:SetParent(entityPanel)
 					spawnIcon:SetPos((colOffset + ( colCount * spawnIconWidth)), (rowOffset + ( rowCount * spawnIconHeight)))
-					local toolTip = v[1] .. " \n " 
-										 .. "Radius: " .. tostring(v[4]) .. "\n"
-										 .. "Energy: " .. tostring(v[5]) .. "\n"
-										 .. "Cost: " .. tostring(v[6]) .. "\n"
+					local toolTip = "OMFG!!! It's BROKE!!"
+					if v[4] > 0 then 
+						toolTip = v[1] .. "\n" 
+									   .. "Radius: " .. tostring(v[4]) .. "\n"
+									   .. "Energy: " .. tostring(v[5]) .. "\n"
+									   .. "Cost: " .. tostring(v[6]) .. "\n"
+					else
+						toolTip = v[1] .. "\n" 
+						  			   .. "Cost: " .. tostring(v[6]) .. "\n"
+					end
 					spawnIcon:SetToolTip( toolTip )
 					spawnIcon.OnMousePressed = function() RunConsoleCommand("fan_buy", v[3], k ) end
 					spawnIcon.OnMouseReleased = function() RememberCursorPosition( ) MeteorMenu:Close() end
@@ -297,28 +309,7 @@ function fanKeyPressed()
 				transCreditsSlider:SetMax(credits)
 				transCreditsSlider:SetDecimals(0)
 				transCreditsSlider:SetText('Trans. Amt.')
-				
-				MeteorMenu:SetVisible(true)
-				if MeteorMenu.once == nil then
-					MeteorMenu.once = true
-					MeteorMenu:MakePopup()
-				end
-				showQMenu = true
-
-			
-		elseif showQMenu and
-			!input.IsKeyDown(KEY_Q) then
-			--print("Spawn Menu Closed")
-			RememberCursorPosition()
-			MeteorMenu:SetVisible(false)
-			MeteorMenu:Close()
-			showQMenu = false
-		end
-	keyNextThink = CurTime() + 0.25
-	end
 end
-hook.Add( "Think", "fanKeyPressed", fanKeyPressed )
-
 
 function fanWelcome()
 

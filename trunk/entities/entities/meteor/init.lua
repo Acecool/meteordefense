@@ -37,23 +37,23 @@ ENT.MeteorList[1] =	{
 ENT.MeteorList = {}
 					
 ENT.MeteorList[5] =	{
-					 "models/meteors/meteor5.mdl"
+					 "models/meteors/meteor_5.mdl"
 					}
 
 ENT.MeteorList[4] =	{
-					 "models/meteors/meteor4.mdl"					 
+					 "models/meteors/meteor_4.mdl"					 
 					}
 
 ENT.MeteorList[3] =	{
-					 "models/meteors/meteor3.mdl"
+					 "models/meteors/meteor_3.mdl"
 					}					
 
 ENT.MeteorList[2] =	{
-			 	     "models/meteors/meteor2.mdl"
+			 	     "models/meteors/meteor_2.mdl"
 					}										
 
 ENT.MeteorList[1] =	{
-					 "models/meteors/meteor1.mdl"
+					 "models/meteors/meteor_1.mdl"
 					}										
 				
 
@@ -104,17 +104,19 @@ end
 function ENT:PhysicsCollide( data, physobj )
 
 	if data.DeltaTime >= 0.9 then
-		data.HitEntity:TakeDamage((data.Speed / self:BoundingRadius()) * math.Rand(1,2), self, self)
 		WorldSound("Boulder.ImpactHard",data.HitPos, 328, 100)
-		if !data.HitEntity:IsWorld() then
-			if math.random(1,100) > 75 then data.HitEntity:Ignite(math.random(10,20),128) end
-		end
-		self:Fragment( data.Speed )
+		
+		self:Fragment( self:GetVelocity() )
+		
+		if data.HitEntity:IsWorld() then return end
+		data.HitEntity:TakeDamage((data.Speed / 8) * math.Rand(1,1.5678), self, self)
+		if math.random(1,100) > 75 then data.HitEntity:Ignite(math.random(10,20),128) end
+	
 	end
 	
 end
 
-function ENT:Fragment( speed )
+function ENT:Fragment( newVel )
 
 	if self.fragged then return end
 	self.fragged = true
@@ -124,7 +126,6 @@ function ENT:Fragment( speed )
 	if self.size > 1 then
 
 		local fragPos = self:GetPos()
-		local negVel = self:GetVelocity()
 		self:EmitSound("Breakable.Concrete", 250, 100)	
 		SafeRemoveEntityDelayed(self, 0)
 		szPieces = string.Explode(",", self.MeteorPieces[self.size][math.random(1,table.Count(self.MeteorPieces[self.size]))])
@@ -136,7 +137,7 @@ function ENT:Fragment( speed )
 			fragment.size = tonumber(v)
 			fragment:ChangeSize()
 			local rndDir = Vector(math.Rand(-1,1),math.Rand(-1,1), 0)
-			fragment:GetPhysicsObject():SetVelocity(rndDir * (negVel:Length() * 0.65) ) -- speed)
+			fragment:GetPhysicsObject():SetVelocity(rndDir * (newVel:Length() * 0.65) ) -- speed)
 			fragment:EmitSound("Weapon_Mortar.Incomming", 150, 50) 
 		end
 		
