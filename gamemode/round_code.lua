@@ -137,8 +137,8 @@ function GetPostRoundInterval() return iPostRoundInterval end
 
 
 -- Quick Hooks they keep track of the players playing
-hook.Add( "PlayerInitialSpawn", "fanPlayerInitialSpawn", function ( ply ) table.insert( iPlayers, ply ) end )
-hook.Add( "PlayerDisconnected", "fanPlayerDisconnected", function ( ply ) table.remove(iPlayers, IndexFromValue(ply)) end )
+--hook.Add( "PlayerAuthed", "fanRoundPlayerAuthed", function ( ply, stid, uid ) table.insert( iPlayers, ply ) end )
+--hook.Add( "PlayerDisconnected", "fanRoundPlayerDisconnected", function ( ply ) table.remove(iPlayers, IndexFromValue(iPlayers, ply)) end )
 
 -- Internal Functions
 
@@ -174,7 +174,7 @@ function iPreRound( time )
 		timer.Remove("iPreRoundTimer")
 		iRoundStart()
 	else
-		iCleanTable(iPlayers)
+		iPlayers = player.GetHumans()
 		hook.Call( "PreRound", nil, iPlayers, iPreRoundTime - time)
 		iPreRan = true
 		timer.Remove("iPreRoundTimer")
@@ -192,7 +192,7 @@ function iRoundStart()
 		timer.Create("iRoundTimer", iRoundTime, 0, iRoundEnd )
 	end
 	
-	iCleanTable(iPlayers)
+	iPlayers = player.GetHumans()
 	hook.Call( "RoundStart", nil, iPlayers )
 	
 end
@@ -202,7 +202,7 @@ function iRoundEnd()
 	iRoundStarted = -1
 	timer.Remove("iRoundTimer")
 	
-	iCleanTable(iPlayers)
+	iPlayers = player.GetHumans()
 	hook.Call( "RoundEnd", nil, iPlayers )
 	
 	iPostRound( 0 )
@@ -216,7 +216,7 @@ function iPostRound( time )
 		timer.Stop("iPostRoundTimer")
 		iPreRound( 0 )
 	else
-		iCleanTable(iPlayers)
+		iPlayers = player.GetHumans()
 		hook.Call( "PostRound", nil, iPlayers, iPostRoundTime - time)
 		iPostRan = true
 		timer.Remove("iPostRoundTimer")

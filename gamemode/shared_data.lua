@@ -25,7 +25,13 @@ table.insert(entities, { "Laser Turret Lvl 3", "models/laser_turret.mdl", "laser
 table.insert(entities, { "Laser Turret Lvl 4", "models/laser_turret.mdl", "laser_turret", 896, 115, 22000 })
 table.insert(entities, { "Laser Turret Lvl 5", "models/laser_turret.mdl", "laser_turret", 1024, 130, 26000 })
 table.insert(entities, { "Laser Turret Lvl 6(Max)", "models/laser_turret.mdl", "laser_turret", 2048, 260, 52000 })
-
+table.insert(entities, { "Force Shield lvl 1", "models/shield_gen/gen.mdl", "shield_gen", 128, 1000, 20000 })
+table.insert(entities, { "Force Shield lvl 2", "models/shield_gen/gen.mdl", "shield_gen", 128, 2000, 30000 })
+table.insert(entities, { "Force Shield lvl 3", "models/shield_gen/gen.mdl", "shield_gen", 256, 5000, 40000 })
+table.insert(entities, { "Force Shield lvl 4", "models/shield_gen/gen.mdl", "shield_gen", 256, 7500, 50000 })
+table.insert(entities, { "Force Shield lvl 5", "models/shield_gen/gen.mdl", "shield_gen", 512, 10000, 60000 })
+table.insert(entities, { "Force Shield lvl 6(Max)", "models/shield_gen/gen.mdl", "shield_gen", 512, 25000, 100000 })
+table.insert(entities, { "Buggy", "models/buggy.mdl", "jeep", 0, 0, 75000 })
 
 tools = {}
 table.insert(tools, { "Axis" , "axis" } )
@@ -44,6 +50,7 @@ table.insert(tools, { "Color" , "colour" } )
 table.insert(tools, { "Material" , "material" } )
 table.insert(tools, { "Camera" , "camera" } )
 table.insert(tools, { "RT Camera" , "rtcamera" } )
+table.insert(tools, { "Light", "light"})
 
 toolAll = { "camera", "rtcamera" }
 

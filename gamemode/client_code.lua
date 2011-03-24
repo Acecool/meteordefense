@@ -207,7 +207,6 @@ hook.Add("PreDrawOpaqueRenderables", "fanRenderBoxes", RenderBoxes)
 function GM:SpawnMenuEnabled()
 	return false
 end
---hook.Add("SpawnMenuEnabled", "fanSpawnMenuEnabled", fanSpawnMenuEnabled)
 
 function GM:SpawnMenuOpen()
 	return false

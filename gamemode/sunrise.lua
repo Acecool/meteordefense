@@ -228,6 +228,16 @@ hook.Add("EntityKeyValue", "SUNRISE:KeyValue",
 			if (ent:GetClass() == "worldspawn" && key == "skyname") then
 				SetGlobalString("SUNRISE:SkyName", val)
 			end
+			
+			if ((ent:GetClass() == "light") or 
+			   (ent:GetClass() == "light_spot")) and
+			   (key == "targetname") then
+					print("Found " .. ent:GetClass())
+					if val == "nightlight" then
+						print("It's a night light")
+						table.insert(SUNRISE.nightlights, ent)
+					end
+			end
 		end
 	)
 
@@ -238,6 +248,18 @@ hook.Add("Initialize", "SUNRISE:Init",
 			SUNRISE.NextTimeThink = 0
 			SUNRISE.DayMinute = 0
 			SUNRISE.LastBrightness = nil
+			SUNRISE.nightlights = {}
+			local tempTime = GetRealTime()
+			if ((tempTime < DAY_START) or
+			    (tempTime > DAY_END)) then
+					SUNRISE.nightLight = true
+					timer.Simple(5, SUNRISE.lightsOn, SUNRISE)
+					print("Lights start on")
+			else
+					SUNRISE.nightLight = false
+					timer.Simple(5, SUNRISE.lightsOff, SUNRISE)
+					print("Lights start off")
+			end
 		end
 	)
 	
@@ -270,7 +292,76 @@ hook.Add("Think", "SUNRISE:Think",
 			
 			if (SUNRISE.DayMinute > DAY_LENGTH) then SUNRISE.DayMinute = 1 end
 			
+			if ((SUNRISE.DayMinute > DAY_START) and 
+			   (SUNRISE.DayMinute < DAY_END)) and SUNRISE.nightLight then
+				SUNRISE:lightsOff()
+				SUNRISE.nightLight = false
+				print("Lights Off")
+			end
+			
+			if ((SUNRISE.DayMinute < DAY_START) or 
+			   (SUNRISE.DayMinute > DAY_END)) and 
+			   !SUNRISE.nightLight then
+				SUNRISE:lightsOn()
+				SUNRISE.nightLight = true
+				print("Lights On")
+			end
+			
 			SUNRISE.SetSunTime( SUNRISE.DayMinute )
 		end
 	)
+	
+	// lights on bitch!
+function SUNRISE:lightsOn( )
+	// no lights? bail.
+	if ( !self.nightlights ) then return; end
+	
+	// macro function for making the lights flicker.
+	local function flicker( ent )
+		// pattern.
+		local new_pattern;
+		
+		// randomize it.
+		if ( math.random( 1 , 2 ) == 1 ) then
+			new_pattern = 'az';
+		else
+			new_pattern = 'za';
+		end
+		
+		// random delay.
+		local delay = math.random( 0 , 400 ) * 0.01;
+		
+		// flicker the light on.
+		ent:Fire( 'SetPattern' , new_pattern , delay );
+		ent:Fire( 'TurnOn' , '' , delay );
+		
+		// delay the sound.
+		timer.Simple( delay , function( ) ent:EmitSound( 'buttons/button1.wav' , math.random( 70 , 80 ) , math.random( 95 , 105 ) ) end );
+		
+		// delay for solid pattern.
+		delay = delay + math.random( 10 , 50 ) * 0.01;
+		
+		// set solid pattern.
+		ent:Fire( 'SetPattern' , 'z' , delay );
+	end
+	
+	// loop through lights and turn um on.
+	local light;
+	for _ , light in pairs( self.nightlights ) do
+		flicker( light );
+	end
+end
+
+
+// lights out!
+function SUNRISE:lightsOff( )
+	// no lights?
+	if ( !self.nightlights ) then return; end
+	
+	// loop through lights and turn um off.
+	local light;
+	for _ , light in pairs( self.nightlights ) do
+		light:Fire( 'TurnOff' , '' , 0 );
+	end
+end
 print("Loaded Sunrise Code")

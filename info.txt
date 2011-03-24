@@ -1,7 +1,7 @@
 "Gamemode"
 {
 	"name"		"MeteorDefense"
-	"version"	"0.1"
+	"version"	"1.1"
 
 	"author_name"	"Fantym"
 	"author_email"	""

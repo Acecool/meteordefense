@@ -47,10 +47,10 @@ end
 
 -- Sweeps the map of props not in a proper area.
 function fanSweepMap()
-
+	
 	for k,v in pairs(SpawnedEnts) do
 		if ValidEntity(v) then
-			if !ValidEntity(v.CurrentArea) then
+			--[[if !ValidEntity(v.CurrentArea) then
 				SafeRemoveEntityDelayed(v,0)
 				table.remove(SpawnedEnts, k)
 			else
@@ -59,7 +59,7 @@ function fanSweepMap()
 						SafeRemoveEntityDelayed(v,0)
 						table.remove(SpawnedEnts, k)
 				end
-			end		
+			end	--]]	
 		else
 			table.remove(SpawnedEnts, k)
 		end
@@ -173,14 +173,15 @@ function gatherTargets()
 	targets = player.GetAll()
 	table.Add(targets, ents.FindByClass("prop_*"))
 	table.Add(targets, ents.FindByClass("laser_*"))
+	table.Add(targets, ents.FindByClass("shield*"))
 end
 
 function getTarget()
 
 	local targetsCount = table.Count(targets)
 	if targetsCount < 1 then
-		--print("No Targets Found!!")
-		return
+		gatherTargets()
+		
 	end
 	
 	local rndTargetIndex = math.random(1,targetsCount)
@@ -199,21 +200,20 @@ function spawnMeteor()
 	--Grab Meteor Spawns
 	local startsCount = table.Count(meteorSpawns)
 	if startsCount < 1 then
-		--print("No Meteor Spawns!!")
 		return 
 	end
 	local rndSpawnIndex = math.random(1,startsCount)
 	
 	local targetsCount = table.Count(targets)
 	if targetsCount < 1 then
-		--print("No Targets Found!!")
+		
 		return
 	end
-		
-	local rndTargetIndex = math.random(1,targetsCount)
+
+	--local rndTargetIndex = math.random(1,targetsCount)
 	
 	local targPos = getTarget():GetPos() 
-	local targPos2 = 0
+	--[[local targPos2 = 0
 	local linDist = math.Dist(targPos.x, targPos.y,  meteorSpawns[rndSpawnIndex]:GetPos().x, meteorSpawns[rndSpawnIndex]:GetPos().y)
 	local linDist2 = 99999
 	--print("2D Distance to target(first try): " .. tostring(linDist))
@@ -227,11 +227,12 @@ function spawnMeteor()
 	else
 		targPos = targPos2 + Vector( math.random(-150, 150), math.random(-150,150), math.random(-150,150))
 	end
+	--]]
 	
 	local newMeteor = ents.Create("meteor")
 	newMeteor:SetPos(meteorSpawns[rndSpawnIndex]:GetPos())
 	newMeteor:Spawn()
-	newMeteor:Shoot( targPos, newMeteor:GetPos() , math.random(6500,9500) )
+	newMeteor:Shoot( targPos, newMeteor:GetPos() , math.random(5000,7000) )
 
 end
 
@@ -241,14 +242,14 @@ function UpdateCredits( ply )
 	umsg.End()
 end
 				
-function QuickEffect( ent , effect_name )
+function QuickEffect( ent , pos, effect_name )
 		local effect = EffectData()
 		--setup and do effect
-		effect:SetStart(ent:GetPos())
+		effect:SetStart(pos)
 		effect:SetRadius(ent:BoundingRadius())
-		effect:SetOrigin(ent:GetPos())
-		effect:SetScale(ent:GetMaxHealth())
-		effect:SetMagnitude(ent:GetMaxHealth())
+		effect:SetOrigin(pos)
+		effect:SetScale(ent:GetMaxHealth() or ent:BoundingRadius())
+		effect:SetMagnitude(ent:GetMaxHealth() or ent:BoundingRadius())
 		
 		util.Effect(effect_name, effect)
 end
@@ -259,32 +260,32 @@ function InitPlayer( ply )
 		if ply == NULL then return end
 		if !ply:IsValid() then return end
 		if !ply:IsPlayer() then return end
+		if !(ply.Credits == nil) then
+			if ply.Credits < 0 then ply.Credits = 25000 end
+		end
 		if ply.loaded then return end
 			
-		local ShouldLoad = false		
 		
 		-- Own thy self
 		ply.owner = ply
-		ply.InSpawn = false
+		ply.InSpawn = true
 		ply.streak = 0
 		
-		if !(ply:GetPData("Level") == nil) then
-			ShouldLoad = true
-		end
-	
-		if ShouldLoad then
-			ply.Credits = tonumber(ply:GetPData("Credits"))
-		else
-			ply.Credits = 25000
-		end
-		if ply.initProps == nil then
+		ply.Credits = tonumber(ply:GetPData("Credits")) or 25000
+		
+		ply.props = ply.props or {}
+		--[[if ply.initProps == nil then
 			ply.props = {}
 			ply.initProps = true
-		end
+		end--]]
+		
 		ply.RoundCompleted = 0
-		if ply.Credits < 25000 then
+		
+		
+		--[[if ply.Credits < 25000 then
 			ply.Credits = 25000
-		end
+		end--]]
+		
 		ply.loaded = true
 		
 end
@@ -457,23 +458,66 @@ concommand.Add("unclaim_prop", unClaimProp)
 
 function buyStuff( ply, cmd, args )
 
+	-- Check they send an item to buy
 	if args[1] == nil then 
 		ply:ChatPrint("Buy, What?")
 		return 
 	end
 	
-	if !(tonumber(args[1]) == nil) then
-		local prop = tonumber(args[1])
-		if !IsValidArea(ply) then
+	if args[1] == "property" then
+		if ply.CurrentArea == nil then
+			ply:ChatPrint("You Are Not In a Buyable Area!")
+		else
+			if ply.CurrentArea.Owner == nil then
+				if ply.Credits >= ply.CurrentArea.price then
+					ply.Credits = ply.Credits - ply.CurrentArea.price
+					ply.CurrentArea.Owner = ply
+					ply:ChatPrint(tostring(ply.CurrentArea.price) .. " have been deducted from your account.")
+					ply:ChatPrint("Thank you for your purchase!")
+				else
+					ply:ChatPrint("You Can Not Afford This Property!")
+				end
+			elseif ply.CurrentArea.Owner:IsWorld() then
+				ply:ChatPrint("This Is A Public Area and Can Not Be Purchased!")
+			else
+				if ply.CurrentArea.Owner == ply then
+					ply:ChatPrint("You already own this property!")
+				else
+					ply:ChatPrint("This Property Is Owned By " .. ply.CurrentArea.Owner:Nick() .. ".")
+				end
+			end
+		end
+	end
+	
+	if args[1] == "ha" then
+		if ply.Credits >= 300 then
+			ply.Credits = ply.Credits - 300
+			ply:GiveAmmo(200, "Battery")
+			ply:ChatPrint("Thank you! You now have 200 more heal ammo.")
+		else
+			ply:ChatPrint("Sorry You don't have enough.")
+		end
+	
+	end
+	--Check they can spawn from where they are at
+	if !IsValidArea(ply) then
 			ply:ChatPrint("Sorry You are not allowed to build in this area.")
 			return
-		end
-		iCleanTable(ply.props)
-		if table.Count(ply.props) >= PROP_LIMIT then 
+	end
+	-- Clean Prop table
+	iCleanTable(ply.props)
+	
+	--Check Prop Limit
+	if table.Count(ply.props) >= PROP_LIMIT then 
 			ply:ChatPrint("You've Hit the Prop Limit! Please Sell something to build more.")
 			ply:ChatPrint("You have " .. tostring(table.Count(ply.props)) .. " and the limit is " .. tostring(PROP_LIMIT))
 			return
-		end
+	end
+	
+	if !(tonumber(args[1]) == nil) then
+
+		local prop = tonumber(args[1])
+
 		if ply.Credits >= props[prop][3] then
 			ply.Credits = ply.Credits - props[prop][3]
 			local spawnSpot = ply:GetEyeTrace().HitPos
@@ -487,8 +531,7 @@ function buyStuff( ply, cmd, args )
 			newThing.owner = ply
 			newThing.value = props[prop][3]
 			newThing:Spawn()
-			--local groundTrace = util.QuickTrace(newThing:GetPos(), spawnSpot, newThing)
-
+			
 			table.insert(SpawnedEnts, newThing)
 			table.insert(ply.props, newThing)
 			ply:ChatPrint("Thank You!")
@@ -499,16 +542,7 @@ function buyStuff( ply, cmd, args )
 	end
 	
 	if args[1] == "laser_turret" then
-		if !IsValidArea(ply) then
-			ply:ChatPrint("Sorry You are not allowed to build in this area.")
-			return
-		end
-		iCleanTable(ply.props)
-		if table.Count(ply.props) >= PROP_LIMIT then 
-			ply:ChatPrint("You've Hit the Prop Limit! Please Sell something to build more.")
-			ply:ChatPrint("You have " .. tostring(table.Count(ply.props)) .. " and the limit is " .. tostring(PROP_LIMIT))
-			return
-		end
+		
 		local ltNum = tonumber(args[2])
 		if ltNum == nil then return end
 		
@@ -538,41 +572,64 @@ function buyStuff( ply, cmd, args )
 		end
 	
 	end
-	
-	
-	if args[1] == "property" then
-		if ply.CurrentArea == nil then
-			ply:ChatPrint("You Are Not In a Buyable Area!")
+		
+		
+	if args[1] == "shield_gen" then
+		
+		local ltNum = tonumber(args[2])
+		if ltNum == nil then return end
+		
+		if ply.Credits >= entities[ltNum][6] then
+			ply.Credits = ply.Credits - entities[ltNum][6]
+			local spawnSpot = ply:GetEyeTrace().HitPos
+			local newThing = ents.Create("shield_gen")
+			newThing:SetModel(entities[ltNum][2])
+			newThing:SetAngles(Vector(0,90,0))
+			local thingCenter = newThing:LocalToWorld(newThing:OBBCenter())
+			local spawnOffset = (newThing:OBBMaxs().z - newThing:OBBMins().z) / 2
+			newThing:SetAngles(newThing:AlignAngles(newThing:GetForward():Angle(), (ply:GetForward() * -1):Angle()))
+			newThing:SetPos(spawnSpot + thingCenter + Vector(0,0,spawnOffset)) -- + (newThing:OBBMaxs() - newThing:OBBMins()))
+			newThing.owner = ply
+			newThing.value = entities[ltNum][6]
+			newThing:Spawn()
+			newThing.radius = entities[ltNum][4]
+			newThing.maxenergy = entities[ltNum][5]
+			newThing:Activate()
+			newThing:GetPhysicsObject():Wake()
+			newThing:SetHealth(newThing.maxenergy / newThing.radius)
+			newThing:SetMaxHealth(newThing.maxenergy / newThing.radius)
+			
+			table.insert(SpawnedEnts, newThing)
+			table.insert(ply.props, newThing)
+			ply:ChatPrint("Thank You!")
 		else
-			if ply.CurrentArea.Owner == nil then
-				if ply.Credits >= ply.CurrentArea.price then
-					ply.Credits = ply.Credits - ply.CurrentArea.price
-					ply.CurrentArea.Owner = ply
-					ply:ChatPrint(tostring(ply.CurrentArea.price) .. " have been deducted from your account.")
-					ply:ChatPrint("Thank you for your purchase!")
-				else
-					ply:ChatPrint("You Can Not Afford This Property!")
-				end
-			elseif ply.CurrentArea.Owner:IsWorld() then
-				ply:ChatPrint("This Is A Public Area and Can Not Be Purchased!")
-			else
-				if ply.CurrentArea.Owner == ply then
-					ply:ChatPrint("You already own this property!")
-				else
-					ply:ChatPrint("This Property Is Owned By " .. ply.CurrentArea.Owner:Nick() .. ".")
-				end
-			end
+			ply:ChatPrint("You do not have enough Credits for that!")
 		end
+	
 	end
-	if args[1] == "ha" then
-		if ply.Credits >= 300 then
-			ply.Credits = ply.Credits - 300
-			ply:GiveAmmo(200, "Battery")
-			ply:ChatPrint("Thank you! You now have 200 more heal ammo.")
-		else
-			ply:ChatPrint("Sorry You don't have enough.")
-		end
 	
+	if args[1] == "jeep" then
+		
+		local entNum = tonumber(args[2])
+		if entNum == nil then return end
+		
+		if ply.Credits >= entities[entNum][6] then
+			local spawnSpot = ply:GetEyeTrace().HitPos
+			ply.vehicle = ents.Create("prop_vehicle_jeep")
+			ply.vehicle:SetModel("models/buggy.mdl")
+			ply.vehicle:SetKeyValue("vehiclescript", "scripts/vehicles/jeep_test.txt")
+			ply.vehicle:Spawn()
+			local thingCenter = ply.vehicle:LocalToWorld(ply.vehicle:OBBCenter())
+			local spawnOffset = (ply.vehicle:OBBMaxs().z - ply.vehicle:OBBMins().z) / 2
+			ply.vehicle:SetPos(spawnSpot + thingCenter + Vector(0,0,spawnOffset))
+			ply.vehicle:Activate()
+			ply.vehicle.owner = ply
+			ply.vehicle.value = entities[entNum][6]
+			table.insert(ply.props, ply.vehicle)
+			ply:ChatPrint("Drive or Die!")
+			targets = {ply, vehicle}
+			startShower(1,20)
+		end
 	end
 	
 	UpdateCredits(ply)
@@ -601,7 +658,7 @@ function sellStuff( ply, cmd, args )
 				if !(targEnt.owner == ply) then
 					ply:ChatPrint("That's Not Yours to Sell!")
 				else
-					if targEnt.value == nil then targEnt.value = -1 end
+					if targEnt.value == nil then targEnt.value = 1 end
 					salePrice = targEnt.value / 2
 					salePrice = salePrice * (targEnt:Health() / targEnt:GetMaxHealth())
 					salePrice = math.Round(salePrice)
@@ -621,6 +678,7 @@ function sellStuff( ply, cmd, args )
 				salePrice = v.value / 2
 				salePrice = salePrice * (v:Health() / v:GetMaxHealth())
 				salePrice = math.Round(salePrice)
+				if salePrice < 0 then salePrice = 1 end
 				ply:ChatPrint("Prop Sold For " .. tostring(salePrice) .. " credits.")
 				ply.Credits = ply.Credits + salePrice
 				SafeRemoveEntityDelayed(v,0)
@@ -748,8 +806,9 @@ hook.Add("PlayerSpawnObject", "fanPlayerSpawnObject", fanPlayerSpawnObject)
 
 function GM:PlayerSpawn( ply )
 
+	-- Set Playmodel
+	ply:SetModel("models/player/combine_super_soldier.mdl")
 	-- See if they have the area boxes
-	
 	if ply.GotBoxes == nil then
 		for k, v in pairs(svDrawBoxes) do
 			umsg.Start("AddDrawBox", ply)
@@ -789,15 +848,44 @@ function GM:InitPostEntity()
 end
 --hook.Add("InitPostEntity", "fanInitPostEntity", fanInitPostEntity)
 
+function GM:ShouldCollide(ent1, ent2)
+	
+	if ent1:GetClass() == "shield" or
+	   ent2:GetClass() == "shield" then
+		if ent2:GetClass() == "meteor" or
+		   ent1:GetClass() == "meteor" then
+				return true
+		else
+				return false
+		end
+	end
+	
+	return true
+
+end
+
+function tellAll(what)
+	for _, ply in pairs(player.GetHumans()) do
+		ply:ChatPrint(what)
+	end
+end
+
+
 -- Post Round Hook
 -- Starts Autohealing
 function showerPostRound( plys, time )
-	if !DidPostOnce() then
-		RunConsoleCommand("pdmg_autoheal", "1")
-		RunConsoleCommand("pdmg_autoheal_interval", "0.5")
-			for k,v in pairs(plys) do
-				v:ChatPrint("Remember, This is only a break!")
-			end
+	print("Post Round")
+	RunConsoleCommand("pdmg_autoheal", "1")
+	RunConsoleCommand("pdmg_autoheal_interval", "0.5")
+	if table.Count(plys) < 1 then print("No Players!") end 
+	
+	for k,v in pairs(plys) do
+		v:ChatPrint("Remember, This is only a break!")
+		--v:StripWeapons()
+		--v:Give("weapon_physgun")
+		--v:Give("weapon_propheal")
+		--v:Give("gmod_tool")
+		fanPlayerLoadout(v)
 	end
 end
 hook.Add("PostRound", "fanPostRound", showerPostRound)
@@ -806,63 +894,37 @@ hook.Add("PostRound", "fanPostRound", showerPostRound)
 -- Handles the build phase and all things leading to the meteor attack
 function regularShowers( plys , time )
 	print("Pre Round Time: " .. tostring(time))
-	if !DidPreOnce() then
-		if table.Count(plys) > 0 then
-			for k,v in pairs(plys) do
-				v:StripWeapons()
-				v:Give("weapon_physgun")
-				v:Give("weapon_propheal")
-				v:Give("gmod_tool")
-				--print("Giving Tools")
-			end
-		end
-	end
 	
-	if math.Round(time/20) == time / 20 then
-		if table.Count(plys) > 0 then
-			for k, v in pairs(plys) do
-				v:ChatPrint("Time to build, I don't think that's the last of 'em!")
-			end
-		end
+	if math.Round(time/30) == time / 30 then
+		tellAll("Time to build, I don't think that's the last of 'em!")
 	end
 	
 	if time <= GetPreRoundTime() / 4 then
 		RunConsoleCommand("pdmg_autoheal", "0")
 	end
 	
-	
-	if time == 30 then 
-		if table.Count(plys) > 0 then
-			for k,v in pairs(plys) do
-				v:ChatPrint("Next strike estimated time :" ..tostring(math.random(25,35)) .. " seconds.")
-			end
-		end
+	if time == 19 then
+		tellAll("Incoming transmition... Stand By....")
 	end
 	
 	if time == 10 then 
-		if table.Count(plys) > 0 then
-			for k,v in pairs(plys) do
-				v:ChatPrint("Incoming transmition... Stand By....")
-			end
+		for _, ply in pairs(player.GetHumans()) do
+			ply:EmitSound("incoming_detected.wav", 120, 100)
 		end
 	end
 	
 	if time == 5 then 
-		gatherTargets()
-		local rndMeteors = math.random(60,140)
-		local rndDuration = math.random(30,70)
 		
-		if table.Count(plys) > 0 then
-			--PrintTable(plys)
-			for k,v in pairs(plys) do
-				v:ChatPrint("Head for Cover!!")
-				v:ChatPrint(tostring(rndMeteors) .. " meteors for the next " .. tostring(rndDuration) .. " seconds!")
-			end
-		end
-		--print(tostring(rndMeteors) .. " meteors for the next " .. tostring(rndDuration) .. " seconds!")
-		SetRoundTime(rndDuration + time)
-		timer.Simple( time + 2, SpawnDoors, false )
-		timer.Simple( time, startShower, rndMeteors, rndDuration)
+		gatherTargets()
+		
+		local rndMeteors = math.random(65,160) + (table.Count(player.GetHumans()) * 2)
+		local rndDuration = math.random(30,60) + (table.Count(player.GetHumans()))
+		
+		tellAll("Warning!! .. " .. tostring(rndMeteors) .. " meteors inbound.")
+			
+		SetRoundTime(rndDuration + 3)
+		timer.Simple( time , SpawnDoors, false )
+		timer.Simple( time, startShower, rndMeteors, (rndDuration - 1.2 ))
 	end
 	
 end
@@ -871,10 +933,11 @@ hook.Add("PreRound", "fanPreRound", regularShowers)
 -- Round Start Hook
 -- Strips players before the attack
 function stripPlayers( plys )
-
+		print("Round Start")
 		if table.Count(plys) > 0 then
 			for k,v in pairs(plys) do
 				v:StripWeapons()
+				v:Give("weapon_propheal")
 				v.Died = false
 				if v.InSpawn then
 					v.RoundCompleted = RoundPercentComplete()
@@ -892,15 +955,15 @@ hook.Add("RoundStart", "fanRoundStart", stripPlayers)
 -- Round End Hook
 -- Takes care of scoring
 function allClear( plys )
-
-	-- Let Clients know it's over
-	umsg.Start("roundStatus", v)
-		umsg.Bool( false )
-	umsg.End()
+	print("Round Over")
 	-- Do Score!
 	if table.Count(plys) > 0 then
 		--PrintTable(plys)
 		for k,v in pairs(plys) do
+			-- Let Clients know it's over
+			umsg.Start("roundStatus", v)
+				umsg.Bool( false )
+			umsg.End()
 			v:ChatPrint("All Clear!")
 			local earnings = 0
 			for i, p in pairs(v.props) do
@@ -908,6 +971,7 @@ function allClear( plys )
 					table.remove(v.props, i)
 				else
 					if p.value == nil then p.value = 10 end
+					if p.value < 0 then p.value = 1 end
 					if p.Created == nil then p.Created = CurTime() - 1 end
 					
 					ageEarn = CurTime() - p.Created
@@ -952,6 +1016,7 @@ function fixMass( ent )
 	if IsClass(ent, "vehicle") then return end
 	if IsClass(ent, "meteor") then return end
 	
+	
 	ePhys = ent:GetPhysicsObject()
 	
 	if ePhys:IsValid() and !(ePhys:GetMass() == nil) and !(ePhys:GetVolume() == nil) then
@@ -962,7 +1027,12 @@ function fixMass( ent )
 end
 function fixMassHook( ent )
 	timer.Simple(1, fixMass, ent)
-	
+	if ValidEntity(ent) then 
+		if ent:GetClass() == "light" or
+			ent:GetClass() == "gmod_light" then
+			ent.value = 2
+		end
+	end
 end
 hook.Add( "OnEntityCreated", "fanFixMass", fixMassHook )
 
@@ -970,17 +1040,15 @@ hook.Add( "OnEntityCreated", "fanFixMass", fixMassHook )
 -- Give weapons based on what were doing at the moment.
 function fanPlayerLoadout( ply )
 	
-	print("Player LoadOut")
-	ply:StripWeapons()
-	
-	if DidPreOnce() then
+	print("Player LoadOut - Player: " .. ply:Nick())
+
+	if RoundTimeRemaining() > 5 then
+		print("LoadOut RoundTime: " .. tostring(RoundTimeRemaining()))
+	else
+		ply:StripWeapons()
 		ply:Give("weapon_physgun")
 		ply:Give("gmod_tool")
 		ply:Give("weapon_propheal")
-	end
-	
-	if RoundTimeRemaining() > -1 then
-		
 	end
 	
 	UpdateCredits(ply)
@@ -999,12 +1067,9 @@ function GM:PlayerDisconnected( ply )
 		if v.owner == nil then
 		else
 			if v.owner == ply then 
-				if math.random(1,100) < 50 then
-					v:Remove()	
---					ply.Credits = ply.Credits + (v.value * (v:Health() / v:GetMaxHealth()))
-				else
-					v.owner = nil
-				end
+				if v.value == nil then v.value = 1 end
+				ply.Credits = ply.Credits + (v.value * (v:Health() / v:GetMaxHealth()))
+				SafeRemoveEntityDelayed(v, 0)
 			end
 		end
 		if IsClass(v, "property") then
@@ -1043,6 +1108,7 @@ function GM:PlayerSay( ply, str, teamonly)
 		fanLog("chatlog" .. logNameEnd, ply:Nick() .. "(" .. tostring(ply:SteamID()) .. ") :\t" .. str)
 	end
 	
+	return str
 	
 end
 --hook.Add("PlayerSay", "fanPlayerSay", fanPlayerSay)
@@ -1083,6 +1149,7 @@ end
 -- Can't pickup anything unless you own it.
 function GM:PhysgunPickup( ply, ent)
 	
+	if ent:GetClass() == "shield" then return false end
 	if ent:IsPlayer() then return false end
 	if ent.owner == nil then return false end
 
@@ -1158,11 +1225,12 @@ function lookThink()
 						umsg.String(traceEnt:Nick())
 						umsg.Long(traceEnt.Credits)
 						umsg.Long(traceEnt.streak)
-						umsg.Vector(traceEnt:GetPos())
+						--umsg.Vector(traceEnt:GetPos())
+						umsg.Vector(Vector(traceEnt:GetPos().x,traceEnt:GetPos().y, traceEnt:LocalToWorld(traceEnt:OBBMaxs()).z) )
 					umsg.End()
 				else
 					--print("Is not Player")
-					if traceEnt.value == nil then traceEnt.value = 2 end
+					if traceEnt.value == nil then traceEnt.value = 1 end
 					if traceEnt.Created == nil then traceEnt.Created = CurTime() - 1 end
 					local propAge = CurTime() - traceEnt.Created
 					local propWorth = traceEnt.value / 2
@@ -1182,7 +1250,8 @@ function lookThink()
 						end
 						umsg.Long(propWorth)
 						umsg.Long(propAge)
-						umsg.Vector(traceEnt:GetPos())
+						--umsg.Vector(traceEnt:GetPos())
+						umsg.Vector(Vector(traceEnt:GetPos().x,traceEnt:GetPos().y, traceEnt:LocalToWorld(traceEnt:OBBMaxs()).z) )
 						-- num str bool vec
 						if !(traceEnt.energy == nil) then
 							umsg.Long(traceEnt.energy)
@@ -1236,7 +1305,7 @@ end
 hook.Add( "PlayerConnect", "fanPlayerConnect", PlayerConnect)
 
 function GM:PlayerNoClip( ply )
-	if !ply:IsSuperAdmin() then
+	if !ply:IsAdmin() then
 		ply:ChatPrint("No Clip is disabled, if you need to get up try doors")
 		return false
 	else
@@ -1249,7 +1318,7 @@ end
 
 function SaveAllPlayers( pl, cmd, args) 
 
-	if !pl:IsSuperAdmin() then 
+	if !pl:IsAdmin() then 
 		pl:ChatPrint("You must be a Super Admin to do this!")
 		return
 	end
@@ -1262,6 +1331,7 @@ function SaveAllPlayers( pl, cmd, args)
 			iCleanTable(ply.props)
 			for _, prop in pairs(ply.props) do
 				if !(prop.value == nil) then
+					if prop.value < 0 then prop.value = 1 end
 					salePrice = prop.value / 2
 					salePrice = salePrice * (prop:Health() / prop:GetMaxHealth())
 					salePrice = math.Round(salePrice)
@@ -1285,7 +1355,7 @@ concommand.Add("save_all_players", SaveAllPlayers)
 
 
 function giveCredits( ply, cmd, args)
-	if !ply:IsSuperAdmin() then
+	if !ply:IsAdmin() then
 		ply:ChatPrint("Must be Super Admin to use that command")
 		return
 	else

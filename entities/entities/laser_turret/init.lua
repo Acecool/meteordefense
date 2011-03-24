@@ -17,18 +17,43 @@ function ENT:Initialize()
 	self.energy = 100
 	self.attached = false
 	self.attachedEnt = false
+	self.attachTime = CurTime()
 	self.lastEff = CurTime()
 	self.radius = 512
 	self.maxenergy = 100
 	self.lastShot = CurTime()
 	self.heat = 0
-	
+	self.returnTime = CurTime()
 	--local phys = self.Entity:GetPhysicsObject()
-	
+	self.nextPosThink = CurTime() + 0.25
+	self:SetUseType(SIMPLE_USE)
+	hook.Add("Think", tostring(self) .. "posThink", function()
+		
+		if self:GetPhysicsObject():IsAsleep() then return end
+		self:GetPhysicsObject():AddAngleVelocity(self:GetPhysicsObject():GetAngleVelocity() * -1)
+		if !(CurTime() > self.nextPosThink) then return end
+		if !(self.attached) then return end
+		self.nextPosThink = CurTime() + 0.25
+		if (CurTime() / self.returnTime) < 1 then
+			self:SetAngles(LerpAngle((CurTime() / self.returnTime), self:GetUp():Angle(), Vector(0,90,0)))
+		else
+			if !(self:GetUp():Angle().y < 85 or
+				 self:GetUp():Angle().y > 95) and
+				 CurTime() > self.returnTime then
+					self.returnTime = CurTime() + 10
+			else
+				self:SetAngles(Angle(0,90,0))
+				self:GetPhysicsObject():Sleep()
+				self.nextPosThink = CurTime() + 0.25
+			end
+		end
+	end)
 	
 	
 end
 
+upAnimSpeed = CurTime()
+startAngle = Angle(0,0,0)
 
 function ENT:Think()
 	
@@ -57,6 +82,7 @@ function ENT:Think()
 	
 	if !(winEnt == "not") then
 		self:Attack(winEnt)
+		self.returnTime = CurTime() + 12
 	end
 	
 	if self.energy < self.maxenergy then
@@ -99,8 +125,8 @@ function ENT:Attack( target )
 		effect:SetAttachment(self:LookupAttachment("muzzle_end"))
 		effect:SetOrigin(target:GetPos())
 		util.Effect( "ToolTracer", effect)
-		self:EmitSound("Weapon_StunStick.Activate", 125, 200)
-		target:Fragment()
+		self:EmitSound("weapons/gauss/fire1.wav", 125, 200)
+		target:Fragment( target:GetVelocity() )
 		self.energy = self.energy - 12
 		self.value = self.value + 1
 		if CurTime() - self.lastShot < 0.2 then
@@ -109,10 +135,10 @@ function ENT:Attack( target )
 		self.lastShot = CurTime()
 	else
 		--print("Low Energy!! " .. tostring(self.energy))
-		self:EmitSound("Weapon_MegaPhysCannon.DryFire", 160, 100)
+		self:EmitSound("buttons/button16.wav", 160, 100)
 		self.heat = self.heat + 1
 	end
-	if self.heat > 12 then
+	if self.heat > 24 then
 		self:Ignite(2, 0)
 	end
 end
@@ -122,7 +148,8 @@ function ENT:PhysicsCollide( data, physobj )
 	if !ValidEntity(data.HitEntity) then return end
 	if data.HitEntity:IsWorld() then return end
 	
-	if !self.attached then
+	if !self.attached and
+	    CurTime() > self.attachTime then
 		if data.HitEntity:GetClass() == "prop_physics" then
 			if !(data.HitEntity.owner == nil) then
 				if data.HitEntity.owner == self.owner then
@@ -151,7 +178,8 @@ function ENT:PhysicsCollide( data, physobj )
 												   1,
 												   0,
 												   1) --]]
-								constraint.Weld(self, data.HitEntity, 0, 0, 0, true)
+								--constraint.Weld(self, data.HitEntity, 0, 0, 0, true)
+								constraint.Ballsocket(self, data.HitEntity, 0,0, data.HitEntity:WorldToLocal(self.basePoint), 0,0,1)
 						end 
 					)
 				end
@@ -163,7 +191,19 @@ function ENT:PhysicsCollide( data, physobj )
 end
 
 
-function ENT:OnRemove()
-
+function ENT:Use( activator, caller)
+	if self.owner then
+		if activator == self.owner then
+			constraint.RemoveAll(self)
+			self.attached = false
+			self.attachedEnt = nil
+			self.attachTime  = CurTime() + 2
+		end
+	end
 end
 
+function ENT:OnRemove()
+
+	hook.Remove(tostring(self) .. "posThink")
+
+end
